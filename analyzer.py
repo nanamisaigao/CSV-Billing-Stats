@@ -21,15 +21,21 @@ def sum_by_month(rows):
 def sum_by_month_category(rows):
     """返回 {月份: {类别: 金额}}。"""
     total = defaultdict(lambda: defaultdict(float))
-    for row in rows:
-        month=row["日期"][:-3]
-        category=row["类别"]
-        total[month][category] += float(row["金额"])
-    return total
+    skipped = 0
+    for i , row in enumerate(rows,start=2):
+        try:
+            month=row["日期"][:-3]
+            category=row["类别"]
+            total[month][category] += float(row["金额"])
+        except (ValueError, KeyError,TypeError)as e:
+            skipped += 1
+            print(f"第{i}行跳过：{e}")
+
+    return total,skipped
 
 def main():
     rows = read_csv("sample.csv")
-    data = sum_by_month_category(rows)
+    data,skipped = sum_by_month_category(rows)
     grand_total = 0.0
     for month in sorted(data):
         month_total = sum(data[month].values())
@@ -38,10 +44,11 @@ def main():
         for category in CATEGORY_ORDER:
             amount = data[month].get(category,0.0)
             pct=amount/month_total*100
-            print(f"  {category}: {amount:.1f} ({pct:.1f}%)")
+            print(f"  {category}： {amount:.1f} （{pct:.1f}%）")
         print()
 
-    print(f"总计: {grand_total:.1f}")
+    print(f"总计： {grand_total:.1f}")
+    print(f"共跳过 {skipped} 行异常数据")
 
 if __name__ == "__main__":
     main()
